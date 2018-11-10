@@ -66,7 +66,7 @@ export default {
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .login_container {
   width: 100%;
   height: 100%;
@@ -79,11 +79,6 @@ export default {
     padding: 70px 20px 20px;
     border-radius: 10px;
     margin: 200px auto;
-    .el-form-item__label::before {
-      content: '*';
-      color: #f56c6c;
-      margin-right: 4px;
-    }
     .el-button:nth-child(2) {
       margin-left: 100px;
     }

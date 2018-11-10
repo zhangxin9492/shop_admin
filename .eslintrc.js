@@ -6,7 +6,7 @@ module.exports = {
     parser: 'babel-eslint'
   },
   env: {
-    browser: true,
+    browser: true
   },
   extends: [
     // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention
@@ -16,9 +16,7 @@ module.exports = {
     'standard'
   ],
   // required to lint *.vue files
-  plugins: [
-    'vue'
-  ],
+  plugins: ['vue'],
   // add your custom rules here
   rules: {
     // allow async-await
@@ -29,6 +27,7 @@ module.exports = {
     'space-before-function-paren': 0,
     // 不能有分号
     // semi: ['error', 'never'],
+    // 不检查分号
     semi: 0
   }
 }

@@ -14,14 +14,14 @@
         <el-aside width="200px">
           <el-row class="tac">
             <el-col :span="12">
-              <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose" background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" unique-opened>
+              <el-menu default-active="2" class="el-menu-vertical-demo" background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" unique-opened router>
                 <el-submenu index="1">
                   <template slot="title">
                     <i class="el-icon-location"></i>
                     <span>用户管理</span>
                   </template>
                   <el-menu-item-group>
-                    <el-menu-item index="1-1">
+                    <el-menu-item index="user" class="user-list">
                       <i class="el-icon-menu"></i>
                       用户列表
                     </el-menu-item>
@@ -91,15 +91,19 @@
             </el-col>
           </el-row>
         </el-aside>
-        <el-main></el-main>
+        <el-main>
+          <router-view></router-view>
+        </el-main>
       </el-container>
     </el-container>
   </div>
 </template>
 
 <script>
+import axios from 'axios'
 export default {
   methods: {
+    // 退出登录方法
     logout() {
       this.$confirm('是否确定退出登录?', '提示', {
         confirmButtonText: '确定',
@@ -123,12 +127,17 @@ export default {
           })
         })
     },
-    handleOpen(key, keyPath) {
-      console.log(key, keyPath)
-    },
-    handleClose(key, keyPath) {
-      console.log(key, keyPath)
+    getMenus() {
+      axios({
+        method: 'get',
+        url: 'http://localhost:8888/api/private/v1/menus'
+      }).then(res => {
+        console.log(res)
+      })
     }
+  },
+  created() {
+    this.getMenus()
   }
 }
 </script>
