@@ -23,7 +23,7 @@
       </el-table-column>
       <el-table-column label="用户状态" width="200">
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.mg_state" active-color="#13ce66" inactive-color="#C0CCDA">
+          <el-switch v-model="scope.row.mg_state" active-color="#13ce66" inactive-color="#C0CCDA" @change="changeState(scope.row.id,scope.row.mg_state)">
           </el-switch>
         </template>
       </el-table-column>
@@ -51,10 +51,10 @@
         <el-form-item label="密码" prop="password">
           <el-input v-model="ruleForm.password"></el-input>
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="邮箱" prop="email">
           <el-input v-model="ruleForm.email"></el-input>
         </el-form-item>
-        <el-form-item label="手机">
+        <el-form-item label="手机" prop="mobile">
           <el-input v-model="ruleForm.mobile"></el-input>
         </el-form-item>
       </el-form>
@@ -85,7 +85,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 export default {
   data() {
     return {
@@ -116,6 +115,20 @@ export default {
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' },
           { min: 6, max: 12, message: '长度在 6 到 12 个字符', trigger: 'blur' }
+        ],
+        email: [
+          {
+            type: 'email',
+            message: '请输入正确的邮箱地址',
+            trigger: ['blur']
+          }
+        ],
+        mobile: [
+          {
+            pattern: /^1\d{10}$/,
+            message: '请输入正确的手机号',
+            trigger: ['blur']
+          }
         ]
       }
     }
@@ -123,19 +136,22 @@ export default {
   methods: {
     // 列表渲染函数
     getUserList() {
-      axios({
+      this.axios({
         method: 'get',
-        url: 'http://localhost:8888/api/private/v1/users',
+        url: 'users',
         params: {
           query: this.query,
           pagenum: this.currentPage,
           pagesize: this.pageSize
-        },
-        headers: { Authorization: localStorage.getItem('token') }
+        }
       }).then(res => {
-        if (res.data.meta.status === 200) {
-          this.tableData = res.data.data.users
-          this.total = res.data.data.total
+        let {
+          data: { total, users },
+          meta: { status }
+        } = res
+        if (status === 200) {
+          this.tableData = users
+          this.total = total
         }
       })
     },
@@ -163,12 +179,11 @@ export default {
         type: 'warning'
       })
         .then(() => {
-          axios({
+          this.axios({
             method: 'delete',
-            url: `http://localhost:8888/api/private/v1/users/${id}`,
-            headers: { Authorization: localStorage.getItem('token') }
+            url: `users/${id}`
           }).then(res => {
-            if (res.data.meta.status === 200) {
+            if (res.meta.status === 200) {
               // 注意当删除的用户为当前页的最后一项的时候,需要渲染前一页的数据
               if (this.tableData.length === 1 && this.currentPage > 1) {
                 this.currentPage--
@@ -192,13 +207,13 @@ export default {
     add() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
-          axios({
+          this.axios({
             method: 'post',
-            url: 'http://localhost:8888/api/private/v1/users',
-            data: this.ruleForm,
-            headers: { Authorization: localStorage.getItem('token') }
+            url: 'users',
+            data: this.ruleForm
           }).then(res => {
-            if (res.data.meta.status === 201) {
+            if (res.meta.status === 201) {
+              this.$refs.ruleForm.resetFields()
               this.dialogFormVisible = false
               this.getUserList()
             }
@@ -211,37 +226,49 @@ export default {
     // 编辑用户数据
     edits(id) {
       this.dialogEditFormVisible = true
-      axios({
+      this.axios({
         method: 'get',
-        url: `http://localhost:8888/api/private/v1/users/${id}`,
-        headers: { Authorization: localStorage.getItem('token') }
+        url: `users/${id}`
       }).then(res => {
-        if (res.data.meta.status === 200) {
-          console.log(res.data.data)
-          this.form.name = res.data.data.username
-          this.form.email = res.data.data.email
-          this.form.mobile = res.data.data.mobile
-          this.form.id = res.data.data.id
+        let {
+          data: { username, email, mobile, id },
+          meta: { status }
+        } = res
+        if (status === 200) {
+          this.form.name = username
+          this.form.email = email
+          this.form.mobile = mobile
+          this.form.id = id
         }
       })
     },
     // 提交编辑的数据
     deitConfirm() {
-      axios({
+      this.axios({
         method: 'put',
-        url: `http://localhost:8888/api/private/v1/users/${this.form.id}`,
+        url: `users/${this.form.id}`,
         data: {
           email: this.form.email,
           mobile: this.form.mobile
-        },
-        headers: { Authorization: localStorage.getItem('token') }
+        }
       }).then(res => {
-        if (res.data.meta.status === 200) {
+        if (res.meta.status === 200) {
           this.dialogEditFormVisible = false
           this.getUserList()
           this.$message.success('数据修改成功')
         } else {
           this.$message.error('数据修改失败')
+        }
+      })
+    },
+    // 开关切换
+    changeState(id, state) {
+      this.axios({
+        url: `users/${id}/state/${state}`,
+        method: 'put'
+      }).then(res => {
+        if (res.meta.status === 200) {
+          this.$message.success('用户状态修改成功')
         }
       })
     }
