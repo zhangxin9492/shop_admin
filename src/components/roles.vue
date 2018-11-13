@@ -36,8 +36,8 @@
       <el-table-column label="操作" prop="desc">
         <template slot-scope="scope">
           <el-row>
-            <el-button type="primary" plain icon="el-icon-edit" size="mini"></el-button>
-            <el-button type="danger" plain icon="el-icon-delete" size="mini"></el-button>
+            <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="editroles(scope.row.id)"></el-button>
+            <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="delroles(scope.row.id)"></el-button>
             <el-button type="success" plain icon="el-icon-check" size="mini" @click="assignRights(scope.row)">分配角色</el-button>
           </el-row>
         </template>
@@ -52,6 +52,21 @@
         <el-button type="primary" @click="assignRightConfirm">确 定</el-button>
       </div>
     </el-dialog>
+    <!-- 角色编辑弹出框 -->
+    <el-dialog title="编辑角色" :visible.sync="editRolesFormVisible">
+      <el-form ref="form" :model="form" label-width="80px">
+        <el-form-item label="角色名">
+          <el-input v-model="form.roleName"></el-input>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="form.roleDesc"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editRolesFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="deitConfirm">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -63,9 +78,14 @@ export default {
       assignRightsVisible: false,
       rightList: [],
       roleId: 0,
+      editRolesFormVisible: false,
       defaultProps: {
         children: 'children',
         label: 'authName'
+      },
+      form: {
+        roleName: '',
+        roleDesc: ''
       }
     }
   },
@@ -135,6 +155,57 @@ export default {
       })
       if (res.meta.status === 200) {
         this.assignRightsVisible = false
+        this.getRolesList()
+      }
+    },
+    // 删除角色
+    async delroles(id) {
+      try {
+        await this.$confirm('确认删除该角色?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        let res = await this.axios.delete(`roles/${id}`)
+        if (res.meta.status === 200) {
+          this.getRolesList()
+        }
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+      } catch (e) {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      }
+    },
+    // 编辑角色
+    async editroles(id) {
+      this.roleId = id
+      this.editRolesFormVisible = true
+      // 根据id查询角色
+      let res = await this.axios.get(`roles/${id}`)
+      console.log(res)
+      let {
+        meta: { status },
+        data: { roleDesc, roleName }
+      } = res
+      if (status === 200) {
+        this.form.roleName = roleName
+        this.form.roleDesc = roleDesc
+      }
+    },
+    // 编辑确认
+    async deitConfirm() {
+      let res = await this.axios({
+        url: `roles/${this.roleId}`,
+        method: 'put',
+        data: this.form
+      })
+      if (res.meta.status === 200) {
+        this.editRolesFormVisible = false
         this.getRolesList()
       }
     }
