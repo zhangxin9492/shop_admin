@@ -72,20 +72,18 @@ export default {
         })
     },
     // 获取菜单列表
-    getMenus() {
-      this.axios({
+    async getMenus() {
+      let res = await this.axios({
         method: 'get',
         url: 'menus'
-      }).then(res => {
-        let {
-          data,
-          meta: { status }
-        } = res
-        console.log(data)
-        if (status === 200) {
-          this.menuList = data
-        }
       })
+      let {
+        data,
+        meta: { status }
+      } = res
+      if (status === 200) {
+        this.menuList = data
+      }
     }
   },
   created() {

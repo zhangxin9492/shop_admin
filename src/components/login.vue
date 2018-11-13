@@ -46,9 +46,9 @@ export default {
             url: 'http://localhost:8888/api/private/v1/login',
             data: this.ruleForm
           }).then(res => {
-            if (res.data.meta.status === 200) {
+            if (res.meta.status === 200) {
               this.$message.success('登陆成功')
-              localStorage.setItem('token', res.data.data.token)
+              localStorage.setItem('token', res.data.token)
               this.$router.push('/home')
             } else {
               this.$message.error('用户名或者密码错误')

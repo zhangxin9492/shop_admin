@@ -32,7 +32,7 @@
           <el-row>
             <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="edits(scope.row.id)"></el-button>
             <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="del(scope.row.id)"></el-button>
-            <el-button type="success" plain icon="el-icon-check" size="mini">分配角色</el-button>
+            <el-button type="success" plain icon="el-icon-check" size="mini" @click="showRoleListModel">分配角色</el-button>
           </el-row>
         </template>
       </el-table-column>
@@ -81,6 +81,23 @@
         <el-button type="primary" @click="deitConfirm">确 定</el-button>
       </div>
     </el-dialog>
+    <!-- 弹出分配角色框 -->
+    <el-dialog title="分配角色" :visible.sync="dialogroleVisible">
+      <el-form ref="form" :model="form" label-width="80px">
+        <el-form-item label="用户名">
+          <el-tag type="info">{{form.name}}</el-tag>
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-select v-model="form.email" placeholder="0" class="role-input">
+            <el-option label="区域一" value="shanghai"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogroleVisible = false">取 消</el-button>
+        <el-button type="primary" @click="deitConfirm">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -95,6 +112,7 @@ export default {
       total: 0,
       dialogFormVisible: false,
       dialogEditFormVisible: false,
+      dialogroleVisible: false,
       ruleForm: {
         username: '',
         password: '',
@@ -107,6 +125,7 @@ export default {
         mobile: '',
         id: 0
       },
+      roleList: [],
       rules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -261,7 +280,7 @@ export default {
         }
       })
     },
-    // 开关切换
+    // 开关切换用户状态
     changeState(id, state) {
       this.axios({
         url: `users/${id}/state/${state}`,
@@ -271,6 +290,10 @@ export default {
           this.$message.success('用户状态修改成功')
         }
       })
+    },
+    // 分配角色
+    showRoleListModel() {
+      this.dialogroleVisible = true
     }
   },
   created() {
@@ -299,5 +322,8 @@ export default {
   padding: 0 10px;
   display: inline-block;
   border-radius: 2px;
+}
+.role-input {
+  width: 40%;
 }
 </style>

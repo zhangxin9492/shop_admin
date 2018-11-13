@@ -6,38 +6,28 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
     </el-breadcrumb>
-    <!-- 列表展示 -->
+    <!-- 权限列表展示 -->
     <el-table :data="rolesList" style="width: 100%">
       <el-table-column type="expand">
         <template slot-scope="props">
-          <el-row v-for="level1 in props.row.children" :key="level1.id" class="level1">
-            <!-- 一级 -->
+          <el-row v-for="level1 in props.row.children" :key="level1.id">
             <el-col :span="4">
-              <el-tag closable>
-                {{level1.authName}}
-              </el-tag>
+              <el-tag closable @close="handleClose(props.row,level1.id)">{{level1.authName}}</el-tag>
             </el-col>
-            <!-- 二级 -->
             <el-col :span="20">
               <el-row v-for="level2 in level1.children" :key="level2.id">
                 <el-col :span="4">
-                  <el-tag closable type="success">
-                    {{level2.authName}}
-                  </el-tag>
+                  <el-tag type="success" closable @close="handleClose(props.row,level2.id)">{{level2.authName}}</el-tag>
                 </el-col>
                 <el-col :span="20">
-                  <span v-for="level3 in level2.children" :key="level3.id">
-                    <el-tag closable type="warning">
-                      {{level2.authName}}
-                    </el-tag>
-                  </span>
+                  <el-tag v-for="level3 in level2.children" :key="level3.id" type="warning" closable @close="handleClose(props.row,level3.id)">{{level3.authName}}</el-tag>
                 </el-col>
               </el-row>
             </el-col>
           </el-row>
         </template>
       </el-table-column>
-      <el-table-column label="#" prop="id">
+      <el-table-column type="index">
       </el-table-column>
       <el-table-column label="角色名称" prop="roleName">
       </el-table-column>
@@ -48,11 +38,20 @@
           <el-row>
             <el-button type="primary" plain icon="el-icon-edit" size="mini"></el-button>
             <el-button type="danger" plain icon="el-icon-delete" size="mini"></el-button>
-            <el-button type="success" plain icon="el-icon-check" size="mini">分配角色</el-button>
+            <el-button type="success" plain icon="el-icon-check" size="mini" @click="assignRights(scope.row)">分配角色</el-button>
           </el-row>
         </template>
       </el-table-column>
     </el-table>
+    <!-- 分配权限弹出框 -->
+    <el-dialog title="分配权限" :visible.sync="assignRightsVisible">
+      <el-tree :data="rightList" show-checkbox default-expand-all node-key="id" ref="tree" highlight-current :props="defaultProps">
+      </el-tree>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="assignRightsVisible = false">取 消</el-button>
+        <el-button type="primary" @click="assignRightConfirm">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -60,20 +59,84 @@
 export default {
   data() {
     return {
-      rolesList: []
+      rolesList: [],
+      assignRightsVisible: false,
+      rightList: [],
+      roleId: 0,
+      defaultProps: {
+        children: 'children',
+        label: 'authName'
+      }
     }
   },
   methods: {
-    getRolesList() {
-      this.axios({
+    // 获取角色权限列表
+    async getRolesList() {
+      let res = await this.axios({
         method: 'get',
         url: 'roles'
-      }).then(res => {
-        console.log(res)
-        if (res.meta.status === 200) {
-          this.rolesList = res.data
-        }
       })
+      if (res.meta.status === 200) {
+        this.rolesList = res.data
+      }
+    },
+    // 删除角色的权限
+    async handleClose(role, rightId) {
+      let res = await this.axios({
+        method: 'delete',
+        url: `roles/${role.id}/rights/${rightId}`
+      })
+      let {
+        data,
+        meta: { status }
+      } = res
+      if (status === 200) {
+        role.children = data
+      }
+    },
+    // 显示弹出框
+    // 分配权限
+    async assignRights(role) {
+      this.roleId = role.id
+      // 展示对话框
+      this.assignRightsVisible = true
+      // 展示树形结构
+      let res = await this.axios.get('rights/tree')
+      let {
+        data,
+        meta: { status }
+      } = res
+      if (status === 200) {
+        this.rightList = data
+      }
+      this.$nextTick(() => {
+        // 获取所有选中的id
+        let arr = []
+        role.children.forEach(l1 => {
+          l1.children.forEach(l2 => {
+            l2.children.forEach(l3 => {
+              arr.push(l3.id)
+            })
+          })
+        })
+        this.$refs.tree.setCheckedKeys(arr)
+      })
+    },
+    // 确认分配角色
+    async assignRightConfirm() {
+      let checks = this.$refs.tree.getCheckedKeys()
+      let halfChecked = this.$refs.tree.getHalfCheckedKeys()
+      let allChecked = [...checks, ...halfChecked]
+      allChecked = allChecked.join()
+      let res = await this.axios({
+        method: 'post',
+        url: `roles/${this.roleId}/rights`,
+        data: { rids: allChecked }
+      })
+      if (res.meta.status === 200) {
+        this.assignRightsVisible = false
+        this.getRolesList()
+      }
     }
   },
   created() {
@@ -81,7 +144,6 @@ export default {
   }
 }
 </script>
-
 <style lang="less" scoped>
 .roles-container {
   .el-breadcrumb {
