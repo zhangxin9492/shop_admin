@@ -6,6 +6,8 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
     </el-breadcrumb>
+    <!-- 添加角色 -->
+    <el-button type="success" style="margin-top:10px" plain @click="showAdddialog">添加角色</el-button>
     <!-- 权限列表展示 -->
     <el-table :data="rolesList" style="width: 100%">
       <el-table-column type="expand">
@@ -52,7 +54,7 @@
         <el-button type="primary" @click="assignRightConfirm">确 定</el-button>
       </div>
     </el-dialog>
-    <!-- 角色编辑弹出框 -->
+    <!-- 角色添加弹出框 -->
     <el-dialog title="编辑角色" :visible.sync="editRolesFormVisible">
       <el-form ref="form" :model="form" label-width="80px">
         <el-form-item label="角色名">
@@ -67,6 +69,20 @@
         <el-button type="primary" @click="deitConfirm">确 定</el-button>
       </div>
     </el-dialog>
+    <el-dialog title="添加角色" :visible.sync="addRolesFormVisible">
+      <el-form ref="addForm" :model="addForm" label-width="80px" :rules="rules">
+        <el-form-item label="角色名" prop="roleName">
+          <el-input v-model="addForm.roleName"></el-input>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="addForm.roleDesc"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="addRolesFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="addConfirm">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -79,6 +95,7 @@ export default {
       rightList: [],
       roleId: 0,
       editRolesFormVisible: false,
+      addRolesFormVisible: false,
       defaultProps: {
         children: 'children',
         label: 'authName'
@@ -86,6 +103,13 @@ export default {
       form: {
         roleName: '',
         roleDesc: ''
+      },
+      addForm: {
+        roleName: '',
+        roleDesc: ''
+      },
+      rules: {
+        roleName: [{ required: true, message: '请输入角色名', trigger: 'blur' }]
       }
     }
   },
@@ -207,6 +231,26 @@ export default {
       if (res.meta.status === 200) {
         this.editRolesFormVisible = false
         this.getRolesList()
+      }
+    },
+    // 弹出添加框
+    showAdddialog() {
+      this.addRolesFormVisible = true
+    },
+    // 添加确认
+    async addConfirm() {
+      this.$refs.addForm.validate(vaild => {
+        if (!vaild) {
+          return false
+        }
+      })
+      let res = await this.axios.post('roles', this.addForm)
+      console.log(res)
+      if (res.meta.status === 201) {
+        this.$refs.addForm.resetFields()
+        this.addRolesFormVisible = false
+        this.getRolesList()
+        this.$message.success('恭喜你角色添加成功')
       }
     }
   },

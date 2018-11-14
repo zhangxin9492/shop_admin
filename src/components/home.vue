@@ -14,7 +14,7 @@
         <el-aside width="200px">
           <el-row class="tac">
             <el-col :span="12">
-              <el-menu default-active="2" class="el-menu-vertical-demo" background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" unique-opened router>
+              <el-menu :default-active="$route.path.slice(1)" class="el-menu-vertical-demo" background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" unique-opened router>
                 <el-submenu :index=" ''+items.order" v-for="items in menuList" :key="items.id">
                   <template slot="title">
                     <i class="el-icon-location"></i>

@@ -4,12 +4,14 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import ElementUI from 'element-ui'
+import ElTreeGrid from 'element-tree-grid'
 import 'element-ui/lib/theme-chalk/index.css'
 import './assets/css/index.css'
 import axios from 'axios'
 Vue.config.productionTip = false
 Vue.use(ElementUI)
-
+// 树形表格组件
+Vue.component(ElTreeGrid.name, ElTreeGrid)
 // 给Vue的实例添加axios方法不需要每次使用都引入
 Vue.prototype.axios = axios
 // 添加全局的基准路径

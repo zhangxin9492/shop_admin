@@ -32,7 +32,7 @@
           <el-row>
             <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="edits(scope.row.id)"></el-button>
             <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="del(scope.row.id)"></el-button>
-            <el-button type="success" plain icon="el-icon-check" size="mini" @click="showRoleListModel">分配角色</el-button>
+            <el-button type="success" plain icon="el-icon-check" size="mini" @click="showRoleListModel(scope.row)">分配角色</el-button>
           </el-row>
         </template>
       </el-table-column>
@@ -82,20 +82,20 @@
       </div>
     </el-dialog>
     <!-- 弹出分配角色框 -->
-    <el-dialog title="分配角色" :visible.sync="dialogroleVisible">
-      <el-form ref="form" :model="form" label-width="80px">
+    <el-dialog title="分配角色" :visible.sync="assignDialogroleVisible">
+      <el-form ref="form" :model="assignRoles" label-width="80px">
         <el-form-item label="用户名">
-          <el-tag type="info">{{form.name}}</el-tag>
+          <el-tag type="info">{{assignRoles.username}}</el-tag>
         </el-form-item>
-        <el-form-item label="邮箱">
-          <el-select v-model="form.email" placeholder="0" class="role-input">
-            <el-option label="区域一" value="shanghai"></el-option>
+        <el-form-item label="角色">
+          <el-select v-model="assignRoles.rid" class="role-input">
+            <el-option v-for="item in rolesList" :key="item.id" :label="item.roleName" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogroleVisible = false">取 消</el-button>
-        <el-button type="primary" @click="deitConfirm">确 定</el-button>
+        <el-button @click="assignDialogroleVisible = false">取 消</el-button>
+        <el-button type="primary" @click="assignConfirm">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -112,7 +112,7 @@ export default {
       total: 0,
       dialogFormVisible: false,
       dialogEditFormVisible: false,
-      dialogroleVisible: false,
+      assignDialogroleVisible: false,
       ruleForm: {
         username: '',
         password: '',
@@ -125,7 +125,13 @@ export default {
         mobile: '',
         id: 0
       },
-      roleList: [],
+      rolesList: [],
+      assignRoles: {
+        username: '',
+        id: 0,
+        rid: 0
+      },
+      value: '',
       rules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -153,9 +159,9 @@ export default {
     }
   },
   methods: {
-    // 列表渲染函数
-    getUserList() {
-      this.axios({
+    // 用户列表渲染函数
+    async getUserList() {
+      let res = await this.axios({
         method: 'get',
         url: 'users',
         params: {
@@ -163,16 +169,25 @@ export default {
           pagenum: this.currentPage,
           pagesize: this.pageSize
         }
-      }).then(res => {
-        let {
-          data: { total, users },
-          meta: { status }
-        } = res
-        if (status === 200) {
-          this.tableData = users
-          this.total = total
-        }
       })
+      let {
+        data: { total, users },
+        meta: { status }
+      } = res
+      if (status === 200) {
+        this.tableData = users
+        this.total = total
+      }
+    },
+    // 获取角色权限列表
+    async getRolesList() {
+      let res = await this.axios({
+        method: 'get',
+        url: 'roles'
+      })
+      if (res.meta.status === 200) {
+        this.rolesList = res.data
+      }
     },
     // 搜索
     search() {
@@ -291,9 +306,39 @@ export default {
         }
       })
     },
-    // 分配角色
-    showRoleListModel() {
-      this.dialogroleVisible = true
+    // 显示分配角色模态框
+    async showRoleListModel(role) {
+      this.assignDialogroleVisible = true
+      this.assignRoles.username = role.username
+      this.assignRoles.id = role.id
+      // 渲染下拉列表
+      this.getRolesList()
+      // 根据用户id查询角色id
+      // rid控制表单回显
+      let res = await this.axios.get(`users/${role.id}`)
+      let {
+        data: { rid },
+        meta: { status }
+      } = res
+      if (status === 200) {
+        if (rid === -1) {
+          this.assignRoles.rid = ''
+          return
+        }
+        this.assignRoles.rid = rid
+      }
+    },
+    // 提交分配角色
+    async assignConfirm() {
+      let res = await this.axios.put(
+        `users/${this.assignRoles.id}/role`,
+        this.assignRoles
+      )
+      if (res.meta.status === 200) {
+        this.assignDialogroleVisible = false
+        this.getUserList()
+        this.$message.success('角色分配成功')
+      }
     }
   },
   created() {
